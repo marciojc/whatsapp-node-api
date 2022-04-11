@@ -4,6 +4,7 @@ const {
 } = require('whatsapp-web.js');
 const request = require('request')
 const vuri = require('valid-url');
+const data = require('../sender');
 
 const sendMessage = async (phone, message) => {
   if (phone == undefined || message == undefined) {
@@ -50,9 +51,9 @@ const sendAudio = async (phone, audio) => {
 }
 
 router.get('/message', async (req, res) => {
-  const topic = req.params.topic;
-  const subject = req.params.subject;
-  const audio = req.params.audio;
+  const topic = req.query.topic;
+  const subject = req.query.subject;
+  const audio = req.query.audio;
 
   if (topic == undefined || subject == undefined || audio == undefined) {
     res.send({
@@ -62,12 +63,26 @@ router.get('/message', async (req, res) => {
     return;
   }
 
-  const resp1 = await sendMessage(number, message);
-  const resp2 = await sendAudio(number, audio);
-  const resp3 = await sendMessage(number, message2);
-  const resp4 = await sendMessage(number, message3);
+  if (data.length === 0) {
+    res.send({
+      status: 'success',
+      message: 'no data.',
+    })
 
-  const messages = [resp1, resp2, resp3, resp4];
+    return;
+  }
+
+  const messages = [];
+
+  data.forEach(async (item) => {
+    if (item.type === 'text') {
+      const resp = await sendMessage(number, item.value);
+      messages.push(resp);
+    } else if (item.type === 'audio') {
+      const resp = await sendAudio(number, audio);
+      messages.push(resp);
+    }
+  });
 
   res.send({
     status: 'success',
