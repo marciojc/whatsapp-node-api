@@ -1,7 +1,7 @@
-const router = require("express").Router();
-const fs = require("fs");
+const router = require('express').Router();
+const fs = require('fs');
 
-router.get("/checkauth", async (req, res) => {
+router.get('/checkauth', async (req, res) => {
   client
     .getState()
     .then((data) => {
@@ -10,17 +10,17 @@ router.get("/checkauth", async (req, res) => {
     })
     .catch((err) => {
       if (err) {
-        res.send("DISCONNECTED");
+        res.send('DISCONNECTED');
       }
     });
 });
 
-router.get("/getqr", async (req, res) => {
+router.get('/getqr', async (req, res) => {
   client
     .getState()
     .then((data) => {
       if (data) {
-        res.write("<html><body><h2>Already Authenticated</h2></body></html>");
+        res.write('<html><body><h2>Already Authenticated</h2></body></html>');
         res.end();
       } else sendQr(res);
     })
@@ -28,7 +28,7 @@ router.get("/getqr", async (req, res) => {
 });
 
 function sendQr(res) {
-  fs.readFile("components/last.qr", (err, last_qr) => {
+  fs.readFile('components/last.qr', (err, last_qr) => {
     if (!err && last_qr) {
       var page = `
                     <html>
