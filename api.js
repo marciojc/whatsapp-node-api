@@ -76,6 +76,7 @@ const chatRoute = require('./components/chatting');
 const groupRoute = require('./components/group');
 const authRoute = require('./components/auth');
 const contactRoute = require('./components/contact');
+const sender = require('./components/sender');
 
 app.use(function (req, res, next) {
   console.log(req.method + ' : ' + req.path);
@@ -85,6 +86,7 @@ app.use('/chat', chatRoute);
 app.use('/group', groupRoute);
 app.use('/auth', authRoute);
 app.use('/contact', contactRoute);
+app.use('/send', sender);
 
 app.listen(port, () => {
   console.log('Server Running Live on Port : ' + port);
