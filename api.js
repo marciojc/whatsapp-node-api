@@ -2,8 +2,8 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const fs = require('fs');
 const axios = require('axios');
+require('dotenv').config();
 
-const config = require('./config.json');
 const {
   Client,
   LocalAuth
@@ -21,7 +21,7 @@ global.authed = false;
 
 const app = express();
 
-const port = process.env.PORT || config.port;
+const port = process.env.PORT || 5000;
 //Set Request Size Limit 50 MB
 app.use(bodyParser.json({
   limit: '50mb'
@@ -56,12 +56,12 @@ client.on('ready', () => {
 });
 
 client.on('message', async (msg) => {
-  if (config.webhook.enabled) {
+  if (process.env.WEBHOOK_ENABLED) {
     if (msg.hasMedia) {
       const attachmentData = await msg.downloadMedia();
       msg.attachmentData = attachmentData;
     }
-    axios.post(config.webhook.path, {
+    axios.post(process.env.WEBHOOK_PATH, {
       msg
     });
   }
