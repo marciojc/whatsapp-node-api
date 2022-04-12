@@ -4,7 +4,6 @@ const {
   Location
 } = require("whatsapp-web.js");
 const request = require('request')
-const vuri = require('valid-url');
 const fs = require('fs');
 
 const mediadownloader = (url, path, callback) => {

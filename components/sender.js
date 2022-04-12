@@ -3,7 +3,6 @@ const {
   MessageMedia
 } = require('whatsapp-web.js');
 const request = require('request')
-const vuri = require('valid-url');
 const data = require('../sender');
 
 const sendMessage = async (phone, message) => {
