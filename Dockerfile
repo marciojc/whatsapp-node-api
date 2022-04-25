@@ -1,4 +1,4 @@
-FROM node:12.22.0-buster
+FROM node:14-buster
 
 RUN apt-get update && \
   apt-get install -y \
@@ -9,12 +9,8 @@ RUN apt-get update && \
   libgtk-3-0 && \
   rm -rf /var/lib/apt/lists/*
 
-COPY package.json .
-
-RUN npm install
-
-COPY . .
+WORKDIR /src
 
 EXPOSE 5000
 
-CMD ["npm", "start"]
+CMD ["node"]

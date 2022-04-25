@@ -1,0 +1,14 @@
+version: "3.9"
+services:
+  # Application/Environment Service
+  whatsapp:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    container_name: whatsapp_api
+    working_dir: /src
+    tty: true
+    volumes:
+      - ./:/src
+    ports:
+      - "5001:5000"
