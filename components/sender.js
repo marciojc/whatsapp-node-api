@@ -103,7 +103,7 @@ const normalizeMessage = (messsage, name, topic, subject) => {
     .replace('{subject}', subject)
 }
 
-const sendMessages = async (name, number, topic, subject, media) => {
+const sendMessages = async (name, number, topic, subject, media, audioLink) => {
   const responses = [];
 
   for(let i = 0; i < data.length; i++) {
@@ -114,7 +114,7 @@ const sendMessages = async (name, number, topic, subject, media) => {
       const resp = await sendMessage(number, message);
       responses.push(resp);
     } else if (item.type === 'audio') {
-      const audio = item.value;
+      const audio = item.value || audioLink;
       const resp = await sendAudio(number, audio, media);
       responses.push(resp);
     }
@@ -126,12 +126,13 @@ const sendMessages = async (name, number, topic, subject, media) => {
 router.get('/message', async (req, res) => {
   const topic = req.query.topic;
   const subject = req.query.subject;
+  const audio = req.query.audio;
   let media;
 
   if (topic == undefined || subject == undefined) {
     res.send({
       status: "error",
-      message: "please enter valid topic and subject and audio"
+      message: "please enter valid topic and subject"
     })
     return;
   }
@@ -165,7 +166,7 @@ router.get('/message', async (req, res) => {
       if (rows[i].ÁUDIOS == 'TRUE' ) {
         const name = rows[i].NOME;
         const number = normalizeNumber(rows[i].TELEFONE);
-        const response = await sendMessages(name, number, topic, subject);
+        const response = await sendMessages(name, number, topic, subject, audio, media);
         messages.push(...response);
         total++;
       }
