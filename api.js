@@ -13,6 +13,7 @@ process.title = 'whatsapp-node-api';
 global.client = new Client({
   authStrategy: new LocalAuth(),
   puppeteer: {
+    args: ['--no-sandbox'],
     headless: true
   },
 });
