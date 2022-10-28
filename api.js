@@ -1,6 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const fs = require('fs');
+const cors = require('cors');
 const axios = require('axios');
 require('dotenv').config();
 
@@ -13,9 +14,9 @@ process.title = 'whatsapp-node-api';
 global.client = new Client({
   authStrategy: new LocalAuth(),
   puppeteer: {
-    args: ['--no-sandbox'],
-    headless: true
-  },
+   args: ['--no-sandbox'],
+   headless: false
+ },
 });
 
 global.authed = false;
@@ -29,6 +30,7 @@ app.use(bodyParser.json({
 }));
 
 app.use(express.json());
+app.use(cors());
 app.use(bodyParser.urlencoded({
   extended: true
 }));
