@@ -8,7 +8,6 @@ const fsPromises = require('fs').promises;
 const vuri = require('valid-url');
 const { GoogleSpreadsheet } = require('google-spreadsheet');
 const { OAuth2Client } = require('google-auth-library');
-const data = require('../sender');
 
 const sendMessage = async (phone, message) => {
   let result = '';
@@ -31,7 +30,7 @@ const sendAudio = async (phone, audio, media) => {
   let message = '';
 
   if (phone == undefined || audio == undefined) {
-    return "please enter valid phone and message";
+    return "please enter valid phone and audio";
   } else {
     if (base64regex.test(audio)) {
       if (!media) {
@@ -55,9 +54,7 @@ const sendAudio = async (phone, audio, media) => {
           console.log("audio cache")
         }
 
-        const response = await client.sendMessage(`${phone}@c.us`, media, {
-          sendAudioAsVoice: true
-        });
+        const response = await client.sendMessage(`${phone}@c.us`, media);
 
         if (response.id.fromMe) {
           message = `Audio MediaMessage successfully sent to ${phone}`;
@@ -90,11 +87,14 @@ const sendAudio = async (phone, audio, media) => {
     }
   }
 
-  return message;
+  return {
+    message: message,
+    audioCache: media,
+  };
 }
 
 const normalizeNumber = (number) => {
-  return number.replace('+', '');
+  return number.replace('+', '').replace(/\s/g, '');
 }
 
 const normalizeMessage = (messsage, name, topic, subject) => {
@@ -103,46 +103,38 @@ const normalizeMessage = (messsage, name, topic, subject) => {
     .replace('{subject}', subject)
 }
 
-const sendMessages = async (name, number, topic, subject, media, audioLink) => {
+const sendMessages = async (data, name, number, topic, subject, audioUrl, audioPath) => {
   const responses = [];
+  let audio = undefined;
 
   for(let i = 0; i < data.length; i++) {
     const item = data[i];
 
-    if (item.type === 'text') {
-      const message = normalizeMessage(item.value, name, topic, subject)
+    if (item.tipo === 'text') {
+      const message = normalizeMessage(item.valor, name, topic, subject)
       const resp = await sendMessage(number, message);
       responses.push(resp);
-    } else if (item.type === 'audio') {
-      const audio = item.value || audioLink;
-      const resp = await sendAudio(number, audio, media);
+    } else if (item.tipo === 'audio') {
+      const {
+        message: resp,
+        audioCache,
+      } = await sendAudio(number, audioUrl, audioPath);
+      media = audioCache;
       responses.push(resp);
     }
   }
 
-  return responses;
+  return {
+    responses,
+    audioCache: media,
+  };
 }
 
-router.get('/message', async (req, res) => {
-  const topic = req.query.topic;
-  const subject = req.query.subject;
-  const audio = req.query.audio;
-  let media;
+router.post('/message', async (req, res) => {
+  const message = req.body.message;
 
-  if (topic == undefined || subject == undefined) {
-    res.send({
-      status: "error",
-      message: "please enter valid topic and subject"
-    })
-    return;
-  }
-
-  if (data.length === 0) {
-    res.send({
-      status: 'success',
-      message: 'no data.',
-    })
-
+  if (message == undefined) {
+    res.send("please enter valid message");
     return;
   }
 
@@ -159,15 +151,90 @@ router.get('/message', async (req, res) => {
 
     await doc.loadInfo();
 
-    const sheet = doc.sheetsById[process.env.GOOGLE_SHEET_ID];
+    const sheet = doc.sheetsById[process.env.GOOGLE_SHEET_CONTACTS_ID];
     const rows = await sheet.getRows();
 
-    for (let i = 1; i < rows.length; i++) {
-      if (rows[i].ÁUDIOS == 'TRUE' ) {
+    for (let i = 0; i < rows.length; i++) {
+      if (rows[i].AVISOS == 'true' || rows[i].AVISOS == 'verdadeiro') {
         const name = rows[i].NOME;
         const number = normalizeNumber(rows[i].TELEFONE);
-        const response = await sendMessages(name, number, topic, subject, audio, media);
-        messages.push(...response);
+        const valideMessage = normalizeMessage(message, name);
+        const response = await sendMessage(number, valideMessage);
+        messages.push(response);
+        total++;
+      }
+    }
+    messages.push(`total: ${total}`);
+  } catch (e) {
+    res.send({
+      status: 'error',
+      message: e.message,
+    })
+
+    return
+  }
+
+  res.send({
+    message: messages,
+  })
+});
+
+module.exports = router;
+
+
+router.post('/pre-group-1', async (req, res) => {
+  const topic = req.body.topic;
+  const subject = req.body.subject;
+  const audioUrl = req.body.audio;
+  let media = undefined;
+  let data;
+
+  if (topic == undefined || subject == undefined) {
+    res.send({
+      status: "error",
+      message: "please enter valid topic and subject"
+    })
+    return;
+  }
+
+  const messages = [];
+  let total = 0;
+
+  try {
+    const doc = new GoogleSpreadsheet(process.env.GOOGLE_SPREADSHEET_ID);
+
+    await doc.useServiceAccountAuth({
+      client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+      private_key: process.env.GOOGLE_PRIVATE_KEY,
+    });
+
+    await doc.loadInfo();
+
+    const factory = doc.sheetsById[process.env.GOOGLE_SHEET_FACTORY_ID];
+    data = await factory.getRows();
+
+    if (data.length === 0) {
+      res.send({
+        status: 'success',
+        message: 'no data.',
+      })
+
+      return;
+    }
+
+    const sheet = doc.sheetsById[process.env.GOOGLE_SHEET_CONTACTS_ID];
+    const rows = await sheet.getRows();
+
+    for (let i = 0; i < rows.length; i+=1) {
+      if ((rows[i].ÁUDIOS == 'verdadeiro' || rows[i].ÁUDIOS == 'true') && rows[i].TELEFONE != '') {
+        const name = rows[i].NOME;
+        const number = normalizeNumber(rows[i].TELEFONE);
+        const {
+          responses,
+          audioCache,
+        } = await sendMessages(data, name, number, topic, subject, audioUrl, media);
+        media = audioCache;
+        messages.push(...responses);
         total++;
       }
     }
@@ -183,7 +250,7 @@ router.get('/message', async (req, res) => {
 
   res.send({
     status: 'success',
-    message: messages.join('\n'),
+    message: messages,
   })
 });
 

@@ -5,7 +5,6 @@ router.get('/checkauth', async (req, res) => {
   client
     .getState()
     .then((data) => {
-      console.log(data);
       res.send(data);
     })
     .catch((err) => {
@@ -15,12 +14,24 @@ router.get('/checkauth', async (req, res) => {
     });
 });
 
-router.get('/getqr', async (req, res) => {
+router.get('/getqr2', async (req, res) => {
   client
     .getState()
     .then((data) => {
       if (data) {
         res.write('<html><body><h2>Already Authenticated</h2></body></html>');
+        res.end();
+      } else sendQr2(res);
+    })
+    .catch(() => sendQr2(res));
+});
+
+router.get('/getqr', async (req, res) => {
+  client
+    .getState()
+    .then((data) => {
+      if (data) {
+        res.write('Already Authenticated');
         res.end();
       } else sendQr(res);
     })
@@ -28,6 +39,15 @@ router.get('/getqr', async (req, res) => {
 });
 
 function sendQr(res) {
+  fs.readFile('components/last.qr', (err, last_qr) => {
+    if (!err && last_qr) {
+      res.write(last_qr);
+      res.end();
+    }
+  });
+}
+
+function sendQr2(res) {
   fs.readFile('components/last.qr', (err, last_qr) => {
     if (!err && last_qr) {
       var page = `
