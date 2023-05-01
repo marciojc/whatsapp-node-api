@@ -62,6 +62,7 @@ const sendAudio = async (phone, audio, media) => {
           message = `Audio MediaMessage not sent.`;
         }
       } catch (e) {
+        console.log('media error:', e.message)
         return e.message;
       }
     } else {
@@ -224,6 +225,7 @@ router.post('/pre-group-1', async (req, res) => {
 
     const sheet = doc.sheetsById[process.env.GOOGLE_SHEET_CONTACTS_ID];
     const rows = await sheet.getRows();
+    console.log('total contactos: ', rows.length)
 
     for (let i = 0; i < rows.length; i+=1) {
       if ((rows[i].ÁUDIOS == 'verdadeiro' || rows[i].ÁUDIOS == 'true') && rows[i].TELEFONE != '') {

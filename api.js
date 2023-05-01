@@ -5,6 +5,8 @@ const cors = require('cors');
 const axios = require('axios');
 require('dotenv').config();
 
+process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
+
 const {
   Client,
   LocalAuth
