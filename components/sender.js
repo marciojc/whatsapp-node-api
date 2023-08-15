@@ -7,7 +7,6 @@ const fs = require('fs');
 const fsPromises = require('fs').promises;
 const vuri = require('valid-url');
 const { GoogleSpreadsheet } = require('google-spreadsheet');
-const { OAuth2Client } = require('google-auth-library');
 
 const sendMessage = async (phone, message) => {
   let result = '';
@@ -50,11 +49,14 @@ const sendAudio = async (phone, audio, media) => {
         const path = audio;
         if (!media) {
           media = await MessageMedia.fromUrl(path, { unsafeMime: true });
+          console.log('url:', audio)
+          console.log('filesize:', media.filesize)
+          console.log('mimetype:', media.mimetype)
         } else {
           console.log("audio cache")
         }
 
-        const response = await client.sendMessage(`${phone}@c.us`, media);
+        const response = await client.sendMessage(`${phone}@c.us`, media, { sendMediaAsDocument: true });
 
         if (response.id.fromMe) {
           message = `Audio MediaMessage successfully sent to ${phone}`;
@@ -63,6 +65,31 @@ const sendAudio = async (phone, audio, media) => {
         }
       } catch (e) {
         console.log('media error:', e.message)
+        console.trace()
+        return e.message;
+      }
+    } else if (audio[0] === '/') {
+      try {
+        const path = audio;
+        if (!media) {
+          media = await MessageMedia.fromFilePath(path);
+          console.log('path:', audio)
+          console.log('filesize:', media.filesize)
+          console.log('mimetype:', media.mimetype)
+        } else {
+          console.log("audio cache")
+        }
+
+        const response = await client.sendMessage(`${phone}@c.us`, media, { sendMediaAsDocument: true });
+
+        if (response.id.fromMe) {
+          message = `Audio MediaMessage successfully sent to ${phone}`;
+        } else {
+          message = `Audio MediaMessage not sent.`;
+        }
+      } catch (e) {
+        console.log('file media error:', e.message)
+        console.trace()
         return e.message;
       }
     } else {
@@ -228,6 +255,7 @@ router.post('/pre-group-1', async (req, res) => {
     console.log('total contactos: ', rows.length)
 
     for (let i = 0; i < rows.length; i+=1) {
+      console.log(rows[i].NOME, rows[i].ÁUDIOS)
       if ((rows[i].ÁUDIOS == 'verdadeiro' || rows[i].ÁUDIOS == 'true') && rows[i].TELEFONE != '') {
         const name = rows[i].NOME;
         const number = normalizeNumber(rows[i].TELEFONE);
@@ -242,6 +270,7 @@ router.post('/pre-group-1', async (req, res) => {
     }
     messages.push(`total: ${total}`);
   } catch (e) {
+    console.log('e: ', e.message)
     res.send({
       status: 'error',
       message: e.message,

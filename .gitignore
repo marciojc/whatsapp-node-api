@@ -179,3 +179,5 @@ temp
 components/last.qr
 .wwebjs_auth/
 sender.js
+.wwebjs_cache/
+wwebjs_auth/

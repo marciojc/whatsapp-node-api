@@ -17,7 +17,7 @@ global.client = new Client({
   authStrategy: new LocalAuth(),
   puppeteer: {
    args: ['--no-sandbox'],
-   headless: false
+   headless: false,
  },
 });
 
