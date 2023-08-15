@@ -158,6 +158,17 @@ const sendMessages = async (data, name, number, topic, subject, audioUrl, audioP
   };
 }
 
+const convertUrlToDownload = (linkId) => {
+  const idExtractor = /\/d\/(.+?)(?:\/|#|\?|$)/;
+  const result = idExtractor.exec(linkId);
+                      
+  if (!result) {
+      return '';
+  }
+  
+  return `https://drive.google.com/uc?export=download&id=${result[1]}`
+}
+
 router.post('/message', async (req, res) => {
   const message = req.body.message;
 
@@ -213,9 +224,19 @@ module.exports = router;
 router.post('/pre-group-1', async (req, res) => {
   const topic = req.body.topic;
   const subject = req.body.subject;
-  const audioUrl = req.body.audio;
+  const linkUrl = req.body.audio;
   let media = undefined;
   let data;
+
+  const audioUrl = convertUrlToDownload(linkUrl)
+
+  if (audioUrl.length === 0) {
+    console.log('Invalid gdrive link')
+    res.send({
+      status: 'error',
+      message: 'Invalid gdrive link',
+    })
+  }
 
   if (topic == undefined || subject == undefined) {
     res.send({
